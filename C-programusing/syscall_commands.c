@@ -1,44 +1,87 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
+#include "osport.h"
 
-/* Shell commands for the current platform. */
-static const char *const unix_cmds[] = {
-    "ls",
-    "cp directory_setup.c newdir/SystemCopy.c",
-    "ls newdir",
-    "grep main directory_setup.c"
-};
+/*
+ * Executes the same "utility" tasks as the Java SyscallCommands program
+ * (list a directory, copy a file, search text) but WITHOUT ever spawning a
+ * shell. No system() is used, so no command string is ever interpreted by a
+ * shell. All files and directories touched are local to the current folder.
+ */
 
-static const char *const win_cmds[] = {
-    "dir",
-    "copy directory_setup.c newdir\\SystemCopy.c",
-    "dir newdir",
-    "findstr main directory_setup.c"
-};
+static void list_dir(const char *path)
+{
+    OS_DIR *dir = os_opendir(path);
+    if (!dir) {
+        printf("cannot open '%s'\n", path);
+        return;
+    }
+    const char *entry;
+    while ((entry = os_readdir(dir)) != NULL) {
+        printf("  %s\n", entry);
+    }
+    os_closedir(dir);
+}
 
-static const char *const labels[] = {
-    "ls", "cp", "ls", "grep"
-};
+static int copy_file(const char *src, const char *dst)
+{
+#ifdef _WIN32
+    return CopyFileA(src, dst, FALSE) ? 0 : -1;
+#else
+    /* cp with no shell: argv is a char** (pointer to char* pointers). */
+    char *const av[] = { "cp", (char *)src, (char *)dst, NULL };
+    int code = 0;
+    return os_exec_argv(av, &code) == 0 ? 0 : -1;
+#endif
+}
+
+static int grep_file(const char *pattern, const char *path)
+{
+#ifdef _WIN32
+    /* In-process search: no external program, no shell, fully local. */
+    FILE *f = fopen(path, "r");
+    if (!f) return -1;
+    char line[4096];
+    int found = 0;
+    while (fgets(line, sizeof(line), f)) {
+        if (strstr(line, pattern)) {
+            found = 1;
+            printf("%s", line);
+        }
+    }
+    fclose(f);
+    return found ? 0 : 1;
+#else
+    /* grep with no shell. */
+    char *const av[] = { "grep", (char *)pattern, (char *)path, NULL };
+    int code = 0;
+    os_exec_argv(av, &code);
+    return code;
+#endif
+}
 
 int main(void)
 {
-#ifdef _WIN32
-    const char *const *cmds = win_cmds;
-#else
-    const char *const *cmds = unix_cmds;
-#endif
-    const int count = (int)(sizeof(labels) / sizeof(labels[0]));
+    const char *src = "directory_setup.c";
+    const char *dst = "newdir/SystemCopy.c";
 
-    /* Walk the array with a pointer (const char * const *p). */
-    const char *const *p = cmds;
-    for (int i = 0; i < count; i++, p++) {
-        printf("------- %s -------\n", labels[i]);
-        fflush(stdout);
+    printf("------- ls -------\n");
+    list_dir(".");
+    printf("Exit code: 0\n\n");
 
-        int code = system(*p);
-        printf("Exit code: %d\n", code);
-        printf("\n");
-    }
+    printf("------- cp -------\n");
+    /* Ensure the target folder exists (local to the current folder). */
+    os_mkdir("newdir");
+    int rc = copy_file(src, dst);
+    printf("Exit code: %d\n\n", rc);
+
+    printf("------- ls -------\n");
+    list_dir("newdir");
+    printf("Exit code: 0\n\n");
+
+    printf("------- grep -------\n");
+    rc = grep_file("main", src);
+    printf("Exit code: %d\n\n", rc);
 
     return 0;
 }

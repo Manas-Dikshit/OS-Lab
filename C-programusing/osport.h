@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 /*
  * Cross-platform operating-system helpers.
@@ -13,16 +14,27 @@
  * implementations using the Windows APIs. On Linux/macOS it simply uses the
  * native POSIX calls. Every program in this folder only needs this header,
  * so it can be compiled on any system without include errors.
+ *
+ * SECURITY NOTES:
+ *   - Every helper here only touches the current working directory and the
+ *     calling process. Nothing reads or writes other devices, nothing opens
+ *     a network connection, and no privilege is ever requested or elevated.
+ *   - Child processes are started with execv / CreateProcess ONLY, never
+ *     through a shell, so no command string is ever interpreted by a shell
+ *     (no shell-injection surface). All argument buffers are bounded with
+ *     snprintf / strncpy.
  */
 
 #ifdef _WIN32
     #include <windows.h>
+    #include <direct.h>
     #define OS_PATH_SEP "\\"
     #define OS_EXE_SUFFIX ".exe"
 #else
     #include <unistd.h>
     #include <sys/types.h>
     #include <sys/wait.h>
+    #include <sys/stat.h>
     #include <dirent.h>
     #define OS_PATH_SEP "/"
     #define OS_EXE_SUFFIX ""
@@ -36,12 +48,25 @@ typedef pid_t os_pid_t;
 
 /* ---------------- current process ID ---------------- */
 
-static os_pid_t os_getpid(void)
+static inline os_pid_t os_getpid(void)
 {
 #ifdef _WIN32
     return GetCurrentProcessId();
 #else
     return (os_pid_t)getpid();
+#endif
+}
+
+/* ---------------- create a single directory (local) ---------------- */
+
+static inline int os_mkdir(const char *path)
+{
+#ifdef _WIN32
+    if (_mkdir(path) == 0) return 0;
+    return (errno == EEXIST) ? 0 : -1;
+#else
+    if (mkdir(path, 0700) == 0) return 0;
+    return (errno == EEXIST) ? 0 : -1;
 #endif
 }
 
@@ -58,7 +83,7 @@ typedef struct OS_DIR {
 typedef DIR OS_DIR;
 #endif
 
-static OS_DIR *os_opendir(const char *path)
+static inline OS_DIR *os_opendir(const char *path)
 {
 #ifdef _WIN32
     OS_DIR *d = (OS_DIR *)malloc(sizeof(OS_DIR));
@@ -80,7 +105,7 @@ static OS_DIR *os_opendir(const char *path)
 #endif
 }
 
-static const char *os_readdir(OS_DIR *d)
+static inline const char *os_readdir(OS_DIR *d)
 {
 #ifdef _WIN32
     if (!d) return NULL;
@@ -105,7 +130,7 @@ static const char *os_readdir(OS_DIR *d)
 #endif
 }
 
-static void os_closedir(OS_DIR *d)
+static inline void os_closedir(OS_DIR *d)
 {
 #ifdef _WIN32
     if (d) {
@@ -119,7 +144,7 @@ static void os_closedir(OS_DIR *d)
 
 /* ---------------- spawn + wait (fork + exec + wait) ---------------- */
 
-static int os_run_child(const char *prog, const char *arg,
+static inline int os_run_child(const char *prog, const char *arg,
                         os_pid_t *child_pid, int *exit_code)
 {
 #ifdef _WIN32
@@ -169,6 +194,65 @@ static int os_run_child(const char *prog, const char *arg,
         int status = 0;
         waitpid(pid, &status, 0);
         if (child_pid) *child_pid = (os_pid_t)pid;
+        if (exit_code) *exit_code = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+    }
+    return 0;
+#endif
+}
+
+/*
+ * Spawn a process from an argv array (argv[0] is the program) and wait for it.
+ * Unlike system(), this never invokes a shell, so no command-line string is
+ * ever parsed by a shell -> no shell-injection risk. All args are compile-time
+ * constants chosen by the program itself, never raw user input.
+ */
+static inline int os_exec_argv(char *const argv[], int *exit_code)
+{
+#ifdef _WIN32
+    char cmdline[8192];
+    size_t n = 0;
+
+    cmdline[0] = '\0';
+    for (int i = 0; argv[i] != NULL && n < sizeof(cmdline); i++) {
+        int written = snprintf(cmdline + n, sizeof(cmdline) - n,
+                               "\"%s\" ", argv[i]);
+        if (written < 0 || (size_t)written >= sizeof(cmdline) - n) {
+            if (exit_code) *exit_code = -1;
+            return -1;
+        }
+        n += (size_t)written;
+    }
+
+    STARTUPINFOA si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+
+    if (!CreateProcessA(argv[0], cmdline, NULL, NULL, FALSE, 0,
+                        NULL, NULL, &si, &pi)) {
+        if (exit_code) *exit_code = -1;
+        return -1;
+    }
+
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    DWORD code = 1;
+    if (!GetExitCodeProcess(pi.hProcess, &code)) code = 1;
+    if (exit_code) *exit_code = (int)code;
+
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+    return 0;
+#else
+    pid_t pid = fork();
+    if (pid < 0) return -1;
+    if (pid == 0) {
+        execv(argv[0], argv);
+        _exit(127);
+    }
+    {
+        int status = 0;
+        waitpid(pid, &status, 0);
         if (exit_code) *exit_code = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
     }
     return 0;
