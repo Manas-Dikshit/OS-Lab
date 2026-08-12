@@ -28,8 +28,11 @@ Each file has its own `README-<name>.md` that explains the system calls it uses 
 
 Go to the [`C-programusing/`](./C-programusing) folder to get the C equivalents of these
 programs. They perform the exact same tasks but are written in C using raw system calls and
-pointers (`char**`, `struct dirent*`, `DIR*`, function-local `pid_t`), and are meant to be
-compiled and run on a Linux/Unix system.
+pointers (`char**`, `struct dirent*`, `DIR*`, process IDs). Everything platform-specific is
+isolated in a single portable header (`osport.h`), so the programs compile and run on both
+Windows and Linux/Unix with no include errors. The code is strictly local and safe: it only
+touches the current folder, never spawns a shell (no `system()` / shell injection surface),
+uses bounded string operations, and never opens network connections or elevates privileges.
 
 ---
 
