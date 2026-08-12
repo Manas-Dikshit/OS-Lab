@@ -122,3 +122,7 @@ rm *.class
 ## License
 
 Free to use for learning purposes.
+
+---
+
+Made by MRD with ❤️
