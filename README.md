@@ -24,6 +24,15 @@ Each file has its own `README-<name>.md` that explains the system calls it uses 
 
 ---
 
+## C programs
+
+Go to the [`C-programusing/`](./C-programusing) folder to get the C equivalents of these
+programs. They perform the exact same tasks but are written in C using raw system calls and
+pointers (`char**`, `struct dirent*`, `DIR*`, function-local `pid_t`), and are meant to be
+compiled and run on a Linux/Unix system.
+
+---
+
 ## Prerequisites
 
 - **JDK 9 or later** (programs use `ProcessHandle`, added in Java 9)
