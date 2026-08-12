@@ -1,39 +1,24 @@
-#define _POSIX_C_SOURCE 200809L
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/wait.h>
+#include "osport.h"
 
 int main(void)
 {
-    printf("Parent process PID: %d\n", getpid());
+    printf("Parent process PID: %ld\n", (long)os_getpid());
 
-    /* Fork a child process. */
-    pid_t pid = fork();
-    if (pid < 0) {
-        perror("fork");
-        return 1;
+    /* Build the path of the child executable for the current platform. */
+    char child_name[4096];
+    snprintf(child_name, sizeof(child_name),
+             ".%s%s%s", OS_PATH_SEP, "child_task", OS_EXE_SUFFIX);
+
+    os_pid_t child_pid = 0;
+    int code = 0;
+    int rc = os_run_child(child_name, "Hello from child process", &child_pid, &code);
+
+    if (rc == 0) {
+        printf("Child process PID: %ld\n", (long)child_pid);
+        printf("Child exited with code: %d\n", code);
+    } else {
+        printf("Failed to spawn child process\n");
     }
-
-    if (pid == 0) {
-        /* Child: replace its image with the child_task program (execve). */
-        char *path = "./child_task";
-        char *const child_argv[] = { path, "Hello from child process", NULL };
-        char *const envp[] = { NULL };
-        execve(path, child_argv, envp);
-
-        /* Only reached if exec fails. */
-        perror("execve");
-        _exit(127);
-    }
-
-    /* Parent: wait for the child to finish. */
-    int status = 0;
-    waitpid(pid, &status, 0);
-
-    int code = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
-    printf("Child exited with code: %d\n", code);
 
     return 0;
 }

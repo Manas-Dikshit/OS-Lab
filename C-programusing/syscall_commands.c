@@ -1,55 +1,44 @@
-#define _POSIX_C_SOURCE 200809L
-
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <sys/wait.h>
 
-void run_command(const char *name)
-{
-    printf("------- %s -------\n", name);
+/* Shell commands for the current platform. */
+static const char *const unix_cmds[] = {
+    "ls",
+    "cp directory_setup.c newdir/SystemCopy.c",
+    "ls newdir",
+    "grep main directory_setup.c"
+};
 
-    /* Fork a child process. */
-    pid_t pid = fork();
-    if (pid < 0) {
-        perror("fork");
-        return;
-    }
+static const char *const win_cmds[] = {
+    "dir",
+    "copy directory_setup.c newdir\\SystemCopy.c",
+    "dir newdir",
+    "findstr main directory_setup.c"
+};
 
-    if (pid == 0) {
-        /* Child: replace its image with bash running the given shell commands. */
-        char *const child_argv[] = {
-            "/bin/bash", "-c",
-            /* Each invocation mirrors one command in the Java original. */
-            "ls",
-            NULL
-        };
-
-        /* Switch which command to run based on the pointer name. */
-        if (name[0] == 'c') {
-            child_argv[2] = "cp multiple_directories.c newdir/SyscallCommandsCopy.c";
-        } else if (name[0] == 'g') {
-            child_argv[2] = "grep main multiple_directories.c";
-        }
-
-        execve("/bin/bash", child_argv, NULL);
-        perror("execve");
-        _exit(127);
-    }
-
-    /* Parent: wait for the child to finish. */
-    int status = 0;
-    waitpid(pid, &status, 0);
-    int code = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
-    printf("Exit code: %d\n", code);
-    printf("\n");
-}
+static const char *const labels[] = {
+    "ls", "cp", "ls", "grep"
+};
 
 int main(void)
 {
-    run_command("ls");
-    run_command("cp");
-    run_command("ls");
-    run_command("grep");
+#ifdef _WIN32
+    const char *const *cmds = win_cmds;
+#else
+    const char *const *cmds = unix_cmds;
+#endif
+    const int count = (int)(sizeof(labels) / sizeof(labels[0]));
+
+    /* Walk the array with a pointer (const char * const *p). */
+    const char *const *p = cmds;
+    for (int i = 0; i < count; i++, p++) {
+        printf("------- %s -------\n", labels[i]);
+        fflush(stdout);
+
+        int code = system(*p);
+        printf("Exit code: %d\n", code);
+        printf("\n");
+    }
+
     return 0;
 }
