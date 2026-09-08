@@ -108,14 +108,64 @@ back of the queue. Newly arrived processes join the tail of the queue.
 
 ## Running the Programs
 
-These are plain Java console programs with no dependencies.
+Two folders with identical implementations and input/output formats:
+
+```
+CPUScheduling/
+├── FCFS.java
+├── SJF.java
+├── SRTF.java
+├── PriorityScheduling.java
+├── PreemptivePriorityScheduling.java
+├── RoundRobin.java
+└── C/
+    ├── fcfs.c
+    ├── sjf.c
+    ├── srtf.c
+    ├── priority.c
+    ├── preemptive_priority.c
+    └── round_robin.c
+```
+
+### Java
+
+Plain Java console programs, no dependencies. Java SE 8+ required.
 
 ```bash
 javac FCFS.java        # compile
 java FCFS              # run
 ```
 
+### C
+
+ANSI C, no extra libraries. Any C compiler works (gcc, clang, etc.).
+
+```bash
+gcc fcfs.c -o fcfs     # compile
+./fcfs                 # Linux / macOS (or fcfs.exe on Windows)
+```
+
+A one-shot build of every C program using gcc:
+
+```bash
+for f in *.c; do gcc "$f" -o "${f%.c}"; done
+```
+
+### Input Format
+
 Each program prompts for the number of processes, then per-process data
-(arrival time, burst time, and priority where relevant). `RoundRobin.java`
-also asks for the time quantum. Output is a scheduling table plus average
-turnaround and waiting times.
+(arrival time, burst time, and priority where relevant). The Round Robin
+programs also ask for the time quantum. Example session:
+
+```
+Enter number of processes: 3
+Enter arrival time for P1: 0
+Enter burst time for P1: 5
+Enter arrival time for P2: 1
+Enter burst time for P2: 3
+Enter arrival time for P3: 2
+Enter burst time for P3: 8
+```
+
+Output is a scheduling table (PID, AT, BT, CT, TAT, WT — priority PR where
+relevant) plus average turnaround and waiting times.
