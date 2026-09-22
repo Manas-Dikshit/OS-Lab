@@ -21,6 +21,7 @@ int in = 0, out = 0, items;
 sem_t empty, full, mutex;
 
 void *producer(void *arg) {
+    (void)arg;
     for (int i = 0; i < items; i++) {
         sem_wait(&empty);
         sem_wait(&mutex);
@@ -34,6 +35,7 @@ void *producer(void *arg) {
 }
 
 void *consumer(void *arg) {
+    (void)arg;
     for (int i = 0; i < items; i++) {
         sem_wait(&full);
         sem_wait(&mutex);
