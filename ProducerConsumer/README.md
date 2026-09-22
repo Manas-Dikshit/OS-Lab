@@ -25,7 +25,7 @@ producer and one consumer thread against the same buffer, and finish when the ba
 | File | Implementation |
 |------|----------------|
 | `ProducerConsumer.java` | Hand-rolled counting semaphore built on `wait`/`notify`, using `Thread` |
-| `C/producer_consumer.c` | POSIX `sem_t` and `pthread` threads |
+| `C/producer_consumer.c` | Single source that uses POSIX `pthread`/`sem_t` on Linux and the native Win32 thread/semaphore APIs on Windows |
 
 ---
 
@@ -41,13 +41,18 @@ java ProducerConsumer
 ### C
 
 ```bash
-gcc producer_consumer.c -o producer_consumer -pthread
+gcc producer_consumer.c -o producer_consumer          # Windows (native Win32 APIs)
+gcc producer_consumer.c -o producer_consumer -pthread # Linux / macOS
 ./producer_consumer
 ```
 
-> **Note:** the C program is POSIX code (`pthread.h`, `semaphore.h`), so it builds and runs
-> on Linux/macOS (or WSL). The old MinGW gcc on this Windows box ships no winpthreads and
-> cannot compile it.
+The one source builds on both platforms: on Windows it maps `sem_*`/`pthread_*` onto
+`CreateSemaphore`/`CreateThread`, so it links with plain gcc and no extra libraries
+(no `-pthread` — that flag exists only on POSIX systems).
+
+> **Note:** if you get `undefined reference to sem_wait / pthread_create / …`, you are on a
+> POSIX/mingw system but linked without the thread library — add `-pthread` (or `-lpthread`)
+> to the compile command.
 
 ### Sample run (10 items)
 
