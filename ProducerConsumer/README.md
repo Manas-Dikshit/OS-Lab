@@ -40,15 +40,25 @@ java ProducerConsumer
 
 ### C
 
+On Linux/macOS, `make` picks the right flags automatically (it adds `-pthread` for you):
+
 ```bash
-gcc producer_consumer.c -o producer_consumer          # Windows (native Win32 APIs)
+make                 # Linux / macOS — one command, builds ./producer_consumer
+./producer_consumer
+```
+
+Or compile directly:
+
+```bash
 gcc producer_consumer.c -o producer_consumer -pthread # Linux / macOS
+gcc producer_consumer.c -o producer_consumer          # Windows (native Win32 shim)
 ./producer_consumer
 ```
 
 The one source builds on both platforms: on Windows it maps `sem_*`/`pthread_*` onto
-`CreateSemaphore`/`CreateThread`, so it links with plain gcc and no extra libraries
-(no `-pthread` — that flag exists only on POSIX systems).
+`CreateSemaphore`/`CreateThread`, so it links with plain gcc and no extra libraries. On
+Linux the POSIX symbols are real, hence the `-pthread` flag — if you see
+`undefined reference to sem_wait / pthread_create / …` on Linux, that is the missing flag.
 
 > **Note:** if you get `undefined reference to sem_wait / pthread_create / …`, you are on a
 > POSIX/mingw system but linked without the thread library — add `-pthread` (or `-lpthread`)
