@@ -24,6 +24,22 @@ Each file has its own `README-<name>.md` that explains the system calls it uses 
 
 ---
 
+## Algorithm collections
+
+Alongside the system-call programs, the repo contains self-contained algorithm folders,
+each with matching Java and C implementations:
+
+| Folder | Topic |
+|--------|-------|
+| [`Banker'sAlgo/`](./Banker'sAlgo) | Deadlock avoidance — Banker's Safety and Resource-Request algorithms |
+| [`CPUScheduling/`](./CPUScheduling) | Six classic CPU scheduling algorithms (FCFS, SJF, Priority, SRTF, Preemptive Priority, Round Robin) |
+| [`ProducerConsumer/`](./ProducerConsumer) | Producer–consumer problem solved with semaphores |
+
+Every folder has its own `README.md` describing the algorithm and the exact steps to
+compile and run the Java and C programs.
+
+---
+
 ## C programs
 
 Go to the [`C-programusing/`](./C-programusing) folder to get the C equivalents of these
