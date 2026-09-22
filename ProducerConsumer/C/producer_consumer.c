@@ -1,5 +1,18 @@
+#ifdef _WIN32
+#include <windows.h>
+typedef HANDLE sem_t;
+#define sem_init(s, p, v) (*(s) = CreateSemaphore(NULL, v, 0x7FFFFFFF, NULL), 1)
+#define sem_wait(s) (WaitForSingleObject(*(s), INFINITE) == WAIT_OBJECT_0)
+#define sem_post(s) (ReleaseSemaphore(*(s), 1, NULL) != 0)
+#define sem_destroy(s) (CloseHandle(*(s)), 0)
+typedef HANDLE pthread_t;
+#define pthread_create(t, a, f, arg) \
+    (*(t) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)(f), (arg), 0, NULL), *(t) != NULL)
+#define pthread_join(t, r) (WaitForSingleObject(t, INFINITE) == WAIT_OBJECT_0)
+#else
 #include <pthread.h>
 #include <semaphore.h>
+#endif
 #include <stdio.h>
 
 #define BUFFER_SIZE 5
