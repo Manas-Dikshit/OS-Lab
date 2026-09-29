@@ -23,9 +23,9 @@ int main() {
         for (j = 0; j < frames; j++) if (f[j] == p) hit = 1;
 
         if (!hit) {
-            /* Next use of each resident page from i+1 onwards; -1 = never used again */
+            /* Next use of each resident page from i+1 onwards; n = never used again */
             for (j = 0; j < frames; j++) {
-                nextUse[j] = -1;
+                nextUse[j] = n;
                 for (k = i + 1; k < n; k++)
                     if (f[j] == ref[k]) { nextUse[j] = k; break; }
             }

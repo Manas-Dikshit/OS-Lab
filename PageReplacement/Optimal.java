@@ -26,10 +26,10 @@ public class Optimal {
             for (int v : f) if (v == p) hit = true;
 
             if (!hit) {
-                // Next use of each resident page from i+1 onwards; -1 = never used again
+                // Next use of each resident page from i+1 onwards; n = never used again
                 int[] nextUse = new int[frames];
                 for (int j = 0; j < frames; j++) {
-                    nextUse[j] = -1;
+                    nextUse[j] = n;
                     for (int k = i + 1; k < n; k++) {
                         if (f[j] == ref[k]) { nextUse[j] = k; break; }
                     }
