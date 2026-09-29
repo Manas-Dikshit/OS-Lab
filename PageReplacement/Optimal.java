@@ -34,8 +34,12 @@ public class Optimal {
                         if (f[j] == ref[k]) { nextUse[j] = k; break; }
                     }
                 }
-                int victim = 0;                       // empty slot, or the farthest use
-                for (int j = 1; j < frames; j++) if (nextUse[j] > nextUse[victim]) victim = j;
+                int victim = -1;
+                for (int j = 0; j < frames; j++) if (f[j] == -1) { victim = j; break; }  // free slot first
+                if (victim < 0) {                      // else evict the farthest use
+                    victim = 0;
+                    for (int j = 1; j < frames; j++) if (nextUse[j] > nextUse[victim]) victim = j;
+                }
                 f[victim] = p;
                 faults++;
             }
