@@ -4,9 +4,9 @@ An operating-systems lab collection in two halves:
 
 1. **System-call programs** (Java) — process management, process IDs, and directory
    operations, showing how Java's standard library maps onto the underlying OS calls.
-2. **Algorithm folders** — CPU scheduling, deadlock avoidance, synchronization, and page
-   replacement, each implemented **twice: once in Java and once in C**, in separate
-   folders, with identical input and output.
+2. **Algorithm folders** — CPU scheduling, deadlock avoidance, synchronization, page
+   replacement, memory allocation and IPC, each implemented **twice: once in Java and
+   once in C**, in separate folders, with identical input and output.
 
 > Every `.java` file and every `.c` file is a standalone, self-contained program with no
 > third-party dependencies. Compile the one you want and run it.
@@ -51,6 +51,11 @@ OSLab/
 │   ├── C/{first_fit,best_fit,worst_fit}.c  C/Makefile
 │   └── README.md
 │
+├── SharedMemory/                   # IPC via shared memory, Java at root + C/
+│   ├── SharedMemoryIPC.java
+│   ├── C/shared_memory.c  C/Makefile
+│   └── README.md
+│
 └── README-<name>.md                # one per system-call program
 ```
 
@@ -83,6 +88,7 @@ compile and run both versions.
 | [`ProducerConsumer/`](./ProducerConsumer) | Producer–consumer bounded-buffer problem solved with semaphores |
 | [`PageReplacement/`](./PageReplacement) | Six page replacement algorithms: FIFO, LRU, Optimal, LFU, MFU, Clock |
 | [`MemoryAllocation/`](./MemoryAllocation) | Fixed-partition placement: First Fit, Best Fit, Worst Fit |
+| [`SharedMemory/`](./SharedMemory) | Inter-process communication through a shared memory region |
 
 To compare algorithms, run several of them over the same input and compare their metrics —
 CPU scheduling reports average turnaround and waiting time, page replacement reports total
@@ -108,8 +114,8 @@ Compile all C sources in a folder in one loop:
 for f in *.c; do gcc "$f" -o "${f%.c}"; done
 ```
 
-`PageReplacement/C` and `ProducerConsumer/C` ship a `Makefile` that builds everything in
-one command:
+`PageReplacement/C`, `ProducerConsumer/C` and `SharedMemory/C` ship a `Makefile` that builds
+everything in one command:
 
 ```bash
 cd PageReplacement/C && make && make clean
@@ -181,10 +187,11 @@ javac SJF.java && java SJF        # Java
 cd C && gcc sjf.c -o sjf && ./sjf   # the same algorithm in C
 ```
 
-> `MemoryAllocation/` is the exception: its Java files declare `package MemoryAllocation;`,
-> so compile and run them from the repo root with `javac MemoryAllocation/*.java` and
-> `java MemoryAllocation.FirstFit` (or `BestFit` / `WorstFit`). Its C programs build as
-> usual from `MemoryAllocation/C`.
+> `MemoryAllocation/` and `SharedMemory/` are the exceptions: their Java files declare
+> `package MemoryAllocation;` / `package SharedMemory;`, so compile and run them from the
+> repo root with `javac MemoryAllocation/*.java` then `java MemoryAllocation.FirstFit`
+> (or `BestFit` / `WorstFit`), and `javac SharedMemory/*.java` then
+> `java SharedMemory.SharedMemoryIPC`. Their C programs build as usual from each `C/`.
 
 ```bash
 cd PageReplacement
@@ -233,7 +240,7 @@ Remove the compiled binaries when you are done:
 
 ```bash
 rm *.class                              # root system-call programs
-rm CPUScheduling/*.class BankerAlgo/*.class ProducerConsumer/*.class PageReplacement/*.class MemoryAllocation/*.class
+rm CPUScheduling/*.class BankerAlgo/*.class ProducerConsumer/*.class PageReplacement/*.class MemoryAllocation/*.class SharedMemory/*.class
 for f in */*/*.c; do rm -f "${f%.c}.exe" "${f%.c}"; done   # C binaries
 make -C PageReplacement/C clean          # where a Makefile exists
 ```
