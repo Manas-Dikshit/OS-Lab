@@ -5,8 +5,8 @@ An operating-systems lab collection in two halves:
 1. **System-call programs** (Java) — process management, process IDs, and directory
    operations, showing how Java's standard library maps onto the underlying OS calls.
 2. **Algorithm folders** — CPU scheduling, deadlock avoidance, synchronization, page
-   replacement, memory allocation and IPC, each implemented **twice: once in Java and
-   once in C**, in separate folders, with identical input and output.
+   replacement, memory allocation, IPC and file allocation, each implemented **twice: once
+   in Java and once in C**, in separate folders, with identical input and output.
 
 > Every `.java` file and every `.c` file is a standalone, self-contained program with no
 > third-party dependencies. Compile the one you want and run it.
@@ -56,6 +56,11 @@ OSLab/
 │   ├── C/shared_memory.c  C/Makefile
 │   └── README.md
 │
+├── FileAllocation/                 # sequential, linked and indexed, Java at root + C/
+│   ├── SequentialAllocation.java  LinkedAllocation.java  IndexedAllocation.java
+│   ├── C/{sequential,linked,indexed}.c  C/Makefile
+│   └── README.md
+│
 └── README-<name>.md                # one per system-call program
 ```
 
@@ -89,6 +94,7 @@ compile and run both versions.
 | [`PageReplacement/`](./PageReplacement) | Six page replacement algorithms: FIFO, LRU, Optimal, LFU, MFU, Clock |
 | [`MemoryAllocation/`](./MemoryAllocation) | Fixed-partition placement: First Fit, Best Fit, Worst Fit |
 | [`SharedMemory/`](./SharedMemory) | Inter-process communication through a shared memory region |
+| [`FileAllocation/`](./FileAllocation) | File allocation: sequential (contiguous), linked and indexed |
 
 To compare algorithms, run several of them over the same input and compare their metrics —
 CPU scheduling reports average turnaround and waiting time, page replacement reports total
@@ -114,8 +120,8 @@ Compile all C sources in a folder in one loop:
 for f in *.c; do gcc "$f" -o "${f%.c}"; done
 ```
 
-`PageReplacement/C`, `ProducerConsumer/C` and `SharedMemory/C` ship a `Makefile` that builds
-everything in one command:
+`PageReplacement/C`, `ProducerConsumer/C`, `SharedMemory/C` and `FileAllocation/C` ship a
+`Makefile` that builds everything in one command:
 
 ```bash
 cd PageReplacement/C && make && make clean
@@ -187,11 +193,11 @@ javac SJF.java && java SJF        # Java
 cd C && gcc sjf.c -o sjf && ./sjf   # the same algorithm in C
 ```
 
-> `MemoryAllocation/` and `SharedMemory/` are the exceptions: their Java files declare
-> `package MemoryAllocation;` / `package SharedMemory;`, so compile and run them from the
-> repo root with `javac MemoryAllocation/*.java` then `java MemoryAllocation.FirstFit`
-> (or `BestFit` / `WorstFit`), and `javac SharedMemory/*.java` then
-> `java SharedMemory.SharedMemoryIPC`. Their C programs build as usual from each `C/`.
+> `MemoryAllocation/`, `SharedMemory/` and `FileAllocation/` are the exceptions: their Java
+> files declare a package matching the folder name, so compile and run them from the repo
+> root, e.g. `javac FileAllocation/*.java` then `java FileAllocation.SequentialAllocation`.
+> Use `java MemoryAllocation.FirstFit` or `java SharedMemory.SharedMemoryIPC` for the other
+> two. Their C programs build as usual from each `C/`.
 
 ```bash
 cd PageReplacement
@@ -240,7 +246,7 @@ Remove the compiled binaries when you are done:
 
 ```bash
 rm *.class                              # root system-call programs
-rm CPUScheduling/*.class BankerAlgo/*.class ProducerConsumer/*.class PageReplacement/*.class MemoryAllocation/*.class SharedMemory/*.class
+rm CPUScheduling/*.class BankerAlgo/*.class ProducerConsumer/*.class PageReplacement/*.class MemoryAllocation/*.class SharedMemory/*.class FileAllocation/*.class
 for f in */*/*.c; do rm -f "${f%.c}.exe" "${f%.c}"; done   # C binaries
 make -C PageReplacement/C clean          # where a Makefile exists
 ```
