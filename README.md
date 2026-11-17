@@ -45,6 +45,11 @@ OSLab/
 │   ├── FIFO.java  LRU.java  Optimal.java  LFU.java  MFU.java  Clock.java
 │   ├── C/{fifo,lru,optimal,lfu,mfu,clock}.c  C/Makefile
 │   └── README.md
+
+├── MemoryAllocation/               # fixed-partition placement, Java at root + C/
+│   ├── FirstFit.java  BestFit.java  WorstFit.java
+│   ├── C/{first_fit,best_fit,worst_fit}.c  C/Makefile
+│   └── README.md
 │
 └── README-<name>.md                # one per system-call program
 ```
@@ -77,6 +82,7 @@ compile and run both versions.
 | [`BankerAlgo/`](./BankerAlgo) | Deadlock avoidance — the Safety and Resource-Request algorithms |
 | [`ProducerConsumer/`](./ProducerConsumer) | Producer–consumer bounded-buffer problem solved with semaphores |
 | [`PageReplacement/`](./PageReplacement) | Six page replacement algorithms: FIFO, LRU, Optimal, LFU, MFU, Clock |
+| [`MemoryAllocation/`](./MemoryAllocation) | Fixed-partition placement: First Fit, Best Fit, Worst Fit |
 
 To compare algorithms, run several of them over the same input and compare their metrics —
 CPU scheduling reports average turnaround and waiting time, page replacement reports total
@@ -175,6 +181,11 @@ javac SJF.java && java SJF        # Java
 cd C && gcc sjf.c -o sjf && ./sjf   # the same algorithm in C
 ```
 
+> `MemoryAllocation/` is the exception: its Java files declare `package MemoryAllocation;`,
+> so compile and run them from the repo root with `javac MemoryAllocation/*.java` and
+> `java MemoryAllocation.FirstFit` (or `BestFit` / `WorstFit`). Its C programs build as
+> usual from `MemoryAllocation/C`.
+
 ```bash
 cd PageReplacement
 javac LRU.java && java LRU
@@ -222,7 +233,7 @@ Remove the compiled binaries when you are done:
 
 ```bash
 rm *.class                              # root system-call programs
-rm CPUScheduling/*.class BankerAlgo/*.class ProducerConsumer/*.class PageReplacement/*.class
+rm CPUScheduling/*.class BankerAlgo/*.class ProducerConsumer/*.class PageReplacement/*.class MemoryAllocation/*.class
 for f in */*/*.c; do rm -f "${f%.c}.exe" "${f%.c}"; done   # C binaries
 make -C PageReplacement/C clean          # where a Makefile exists
 ```
